@@ -1,0 +1,10 @@
+name: proj_int
+channels:
+  - conda-forge
+dependencies:
+  - numpy
+  - scipy
+  - jupyterlab
+  - matplotlib
+  - pyfftw
+  - tqdm
