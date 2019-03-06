@@ -37,7 +37,7 @@ class State(object):
         else:
             raise Exception("Must be initialzed with a Grid object.")
 
-        self.t = 0
+        self.t = 0.
 
         self.f = self.new_array()
 

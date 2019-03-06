@@ -9,7 +9,7 @@ from scipy import special
 pyfftw.config.NUM_THREADS = 4
 pyfftw.config.PLANNER_EFFORT = 'FFTW_MEASURE'
 
-DTYPE = 'float64'
+DTYPE = 'complex128'
 
 
 class FastSpectralCollision2D(object):

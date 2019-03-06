@@ -1,0 +1,70 @@
+\documentclass[reqno]{amsart}
+
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage{graphicx,xcolor,xspace}
+
+\newcommand{\recheck}[1]{{\color{red} #1}}
+\newcommand{\rewrite}[1]{{\color{blue} #1}}
+
+\newcommand{\bx}{\bm{x}}
+\newcommand{\bv}{\bm{v}}
+\newcommand{\bu}{\bm{u}}
+\newcommand{\bU}{\bm{U}}
+\newcommand{\bF}{\bm{F}}
+\newcommand{\bW}{\bm{W}}
+\newcommand{\bG}{\bm{G}}
+\newcommand{\bH}{\bm{H}}
+\newcommand{\bw}{\bm{w}}
+\newcommand{\bP}{\bm{P}}
+\newcommand{\bQ}{\bm{Q}}
+\newcommand{\bA}{\bm{A}}
+\newcommand{\bR}{\bm{R}}
+\newcommand{\bq}{\bm{q}}
+\newcommand{\bmm}{\bm{m}}
+\newcommand{\bM}{\bm{M}}
+\newcommand{\veps}{\varepsilon}
+
+
+\newcommand*\diff{\mathop{}\!\mathrm{d}}
+\newcommand*\Diff[1]{\mathop{}\!\mathrm{d^#1}}
+\newcommand{\transpose}{^{\operatorname{T}}}
+
+\begin{document}
+
+\title{Projective Integration for Inelastic Boltzmann equation}
+
+\begin{abstract}
+This paper introduces a new moment system to solve kinetic equations based on machine learning.
+To this end, a set of generalized moments are firstly constructed through an autoencoder to optimally characterize the velocity distribution. 
+The moment system is then closed with the aim of best capturing the associated dynamics.
+The reduced system is interpretable like the conventional PDEs and works independently of the numerical discretizations. 
+In the one-dimension BGK model, the algorithm achieves a uniform accuracy in a wide range of regimes spanning from the hydrodynamic limit to free molecular flow. This makes the proposed method a new candidate for solving kinetic equations with a wide variation of mean free path.
+\end{abstract}
+\maketitle
+
+
+
+
+{ }~\newline TODO
+\begin{itemize}
+\item related literature, asymptotic preserving, time relaxed Monte Carlo
+\item a schematic plot
+\item result of classical moment method
+\item comparison of computational cost with original
+\item discussion: fully nonlinear or perturbative
+% \item further work: entropy condition, hyperbolicity, boundary conditions, start from Navier-Stokes
+\end{itemize}
+
+
+\section*{Acknowledgement}
+This work is supported in part by ONR grant N00014-13-1-0338
+and the Major Program of NNSFC under grant 91130005.
+
+
+\bibliography{ref}{}
+\bibliographystyle{unsrt}
+
+\end{document}
+
+
