@@ -6,7 +6,7 @@ import numpy as np
 import pyfftw
 from scipy import special
 
-pyfftw.config.NUM_THREADS = 4
+pyfftw.config.NUM_THREADS = 8
 pyfftw.config.PLANNER_EFFORT = 'FFTW_MEASURE'
 
 DTYPE = 'complex128'
@@ -52,7 +52,8 @@ class FastSpectralCollision2D(object):
 
         s = config.s
         self._R = 2*s
-        self._L = eval(config.lv)
+#         self._L = 0.5*(3 + np.sqrt(2))*s
+        self._L = config.l
         if N is None:
             self._N = config.nv
         else:
@@ -143,7 +144,7 @@ class FastSpectralCollision2D(object):
 
     def _fftw_planning(self):
         N, M, N_R = self._N, self._M, self._N_R
-#         shape = (N,N)
+        # shape = (N,N)
         shape = (self._nx, N, N)
         # pyfftw planning of (N, N)
         array_2d = pyfftw.empty_aligned(shape, dtype=DTYPE)

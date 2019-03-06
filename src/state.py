@@ -27,7 +27,7 @@ class State(object):
 
     @property
     def E(self):
-        return 0.5*self.sum(self.f*(self.c_centers[-2]**2 + self.c_centers[-1]**2))
+        return 0.5*self.sum_f(self.f*(self.c_centers[-2]**2 + self.c_centers[-1]**2))
 
     def __init__(self, geom):
         if isinstance(geom, Grid):

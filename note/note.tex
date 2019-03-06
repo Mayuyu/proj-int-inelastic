@@ -34,32 +34,133 @@
 
 \title{Projective Integration for Inelastic Boltzmann equation}
 
-\begin{abstract}
-This paper introduces a new moment system to solve kinetic equations based on machine learning.
-To this end, a set of generalized moments are firstly constructed through an autoencoder to optimally characterize the velocity distribution. 
-The moment system is then closed with the aim of best capturing the associated dynamics.
-The reduced system is interpretable like the conventional PDEs and works independently of the numerical discretizations. 
-In the one-dimension BGK model, the algorithm achieves a uniform accuracy in a wide range of regimes spanning from the hydrodynamic limit to free molecular flow. This makes the proposed method a new candidate for solving kinetic equations with a wide variation of mean free path.
-\end{abstract}
 \maketitle
 
+\section{Boltzmann Equation with Inelastic collision}
+
+\subsection{The inelastic collision operator}
+
+Assume two particles with velocities $v$ and $v_*$ are going to collide. During the collision, there is some loss of momentum in the impact direction $\omega \in S^{d-1}$ ($S^{d-1}$ is the unit sphere in $\mathbb{R}^d$), resulting in the post-collisional velocities $v'$ and $v_*'$. Let $e$ stand for the restitution coefficient or inelasticity parameter, then
+\begin{equation} \label{IO}
+(v'-v_*')\cdot \omega=-e[(v-v_*)\cdot \omega], \quad 0 \leq e \leq 1.
+\end{equation}
+
+Using (\ref{IO}), $v'$ and $v_*'$ can be represented as
+\begin{equation}\label{omega}
+\left\{
+\begin{aligned}
+v'&=v-\frac{1+e}{2}[(v-v_*)\cdot \omega ]\omega, \\
+v_*'&=v_*+\frac{1+e}{2}[(v-v_*)\cdot \omega]\omega.
+\end{aligned}\right.
+\end{equation}
+which is $\omega$-representation. One can easily verify the conservation of momentum and dissipation of energy:
+\begin{equation} \label{momentum}
+v'+v_*'=v+v_*; \quad |v'|^2+|v_*'|^2-|v|^2-|v_*|^2=-\frac{1-e^2}{2}[(v-v_*)\cdot \omega]^2\leq 0.
+\end{equation}
+For numerical purpose, it is convenient to consider $\sigma$-representation:
+\begin{equation} \label{sigma}
+\left\{
+\begin{aligned}
+v'&=\frac{v+v_*}{2}+\frac{1-e}{4}(v-v_*)+\frac{1+e}{4}|v-v_*|\sigma, \\
+v_*'&=\frac{v+v_*}{2}- \frac{1-e}{4}(v-v_*)-\frac{1+e}{4}|v-v_*|\sigma,
+\end{aligned}\right.
+\end{equation}
+where $\sigma$ is another unit vector on $S^{d-1}$ and is related to $\omega$ as
+\begin{equation} \label{relation}
+(g\cdot \omega)\omega=\frac{1}{2}(g-|g|\sigma).
+\end{equation}
+Then the collision has the following weak form:
+\begin{align} \label{weak22}
+\int_{\mathbb{R}^d} Q(f,f)(v)\,\varphi(v)\,\diff v &=\frac{1}{2} \int_{\mathbb{R}^d} \int_{\mathbb{R}^d} \int_{S^{d-1}} B_{\sigma}(|g|,\sigma\cdot \hat{g})ff_*\left(\varphi'+\varphi_*'-\varphi-\varphi_* \right)\,\diff\sigma \diff v \diff v_*,
+\end{align}
+where $g=v-v_*$, and $(v',v_*')$ are given by (\ref{sigma}). The collision kernel $B_{\sigma}$ may take various forms depending on the types of interactions. The most commonly used form is the variable hard sphere (VHS) model:
+\begin{equation} \label{VHS}
+B_{\sigma}(|g|,\sigma\cdot \hat{g})=C_{\lambda}|g|^{\lambda}, \quad 0\leq \lambda \leq 1,
+\end{equation}
+where $C_{\lambda}> 0$ is some constant. Two special cases are: Maxwell molecules ($\lambda=0$) and hard spheres ($\lambda=1$).
+
+\subsection{The inelastic Boltzmann equation}
+
+The inelastic Boltzmann equation reads:
+\begin{equation}
+  \partial_t f + v\cdot\nabla_x f = \frac{1}{\varepsilon} Q_\text{in}(f)
+\end{equation}
 
 
+\section{Projective Ingerator}
 
-{ }~\newline TODO
+Consider an ODE system:
+\begin{equation}
+  \left\{
+  \begin{aligned}
+  \frac{du}{dt} &= g(u(t)), \quad t>0 \\
+  u(0) &= u_0.  
+  \end{aligned}
+  \right.
+\end{equation}
+where the dynamic has a scale separation, that is, the eigenvalues of $\frac{dg}{du}$ are clustered into two groups separated by a gap.
+
+\subsection{The scheme}
 \begin{itemize}
-\item related literature, asymptotic preserving, time relaxed Monte Carlo
-\item a schematic plot
-\item result of classical moment method
-\item comparison of computational cost with original
-\item discussion: fully nonlinear or perturbative
-% \item further work: entropy condition, hyperbolicity, boundary conditions, start from Navier-Stokes
+  \item Inner integrator: forward Euler method with small time step $\delta t$:
+        $$u^{k+1} = u^k + \delta t g(u^k).$$
+  \item Extrapolate in time:
+        $$ u^{n+1} = u^{n,K+1} + (\Delta t - (K+1)\delta t)\frac{u^{n,K+1} - u^{n,K}}{\delta t}.$$
 \end{itemize}
 
 
-\section*{Acknowledgement}
-This work is supported in part by ONR grant N00014-13-1-0338
-and the Major Program of NNSFC under grant 91130005.
+
+\section{Numerical}
+
+We consider the Riemann problem (Sod shock tube problem) as test.
+\subsection{Example}
+
+The initial data are given by the Maxwellian distributions computed from the macroscopic quantities
+
+\begin{align}
+  (\rho_l, u_l, T_l) &= (1, 0, 1), \quad &\text{if } 0\leq x\leq 0.5, \\
+  (\rho_r, u_r, T_r) &= (0.125, 0, 0.25) \quad &\text{if }0.5<x\leq 1.
+\end{align}
+
+We solve the $1D_x\times 2D_v$ inelastic Boltzmann equation with different $\varepsilon$s and $e$s.
+
+\subsubsection{$\varepsilon=10^{-2}$}
+
+We test the PFE (projective forward euler) scheme compared with the explicite Euler scheme. $\Delta x=0.02$,  for PFE scheme $\Delta t=0.004$, $\delta t=10^{-3}$ and for Euler scheme $\Delta t = 0.002$. The macroscopic quantities and solution at $T=0.1$ are shown in Figure~1.
+
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{../src/data_figs/e0.2kn-2.pdf}
+\caption{Solutions with $e=0.2$. PFE vs. Euler}
+\end{figure}
+\begin{figure}
+  \centering
+  \includegraphics[width=0.6\textwidth]{../src/data_figs/e0.2kn-2_f.pdf}
+  \caption{Solution $f$ in $v$ when $e=0.2$.}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\textwidth]{../src/data_figs/e0.8kn-2.pdf}
+  \caption{Solutions with $e=0.8$. PFE vs. Euler}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.6\textwidth]{../src/data_figs/e0.8kn-2_f.pdf}
+\caption{Solution $f$ in $v$ when $e=0.8$.}
+\end{figure}
+
+\subsubsection{$\varepsilon=10^{-4}$.}
+
+We perfom the same numerical experiment as above. However, since $\Delta t$ of the Euler scheme is restricted by $\varepsilon$ which is very small in this case. We can only run the PFE with a bigger time step $\Delta t = 0.002$.
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{../src/data_figs/e1.0kn-4.pdf}
+\caption{Solutions with $e=1.0$. PFE}
+\end{figure}
+
+
 
 
 \bibliography{ref}{}

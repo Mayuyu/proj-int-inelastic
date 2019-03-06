@@ -3,6 +3,7 @@
 refs/
 notes/
 ipynb/
+data_figs/
 
 .vscode
 _output/

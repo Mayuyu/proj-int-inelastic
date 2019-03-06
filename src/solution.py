@@ -22,8 +22,7 @@ class Solution(object):
 
     def __init__(self, config):
         # Set domain
-        s = config.s
-        L = eval(config.lv)
+        L = config.l
         self.domain = Domain((config.xmin, -L, -L), (config.xmax, L, L), (config.nx, config.nv, config.nv))
         # Set state
         self.state = State(self.domain)

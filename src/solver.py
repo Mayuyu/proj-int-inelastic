@@ -39,11 +39,12 @@ def grad_vf2(state, dt):
     # v*grad_f
     return vp[2:-2]*F_p_2(state.f,vp[1:-1],dx,dt) + vm[2:-2]*F_m_2(state.f,vm[1:-1],dx,dt)
 
-def grad_vf1(state, dt):
+def grad_vf1(state):
     dx = state.delta[0]
-    vp = np.fmax(state.c_centers[-2], 0.)
-    vm = np.fmin(state.c_centers[-2], 0.)
-    return vp[1:-1]*diff_x_up(state.f)/dx + vm[1:-1]*diff_x_down(state.f)/dx
+    v = state.c_centers[-2]
+    vp = 0.5*(v + np.abs(v))
+    vm = 0.5*(v - np.abs(v))
+    return diff_x_up(vp*state.f)/dx + diff_x_down(vm*state.f)/dx
 
 
 
@@ -56,26 +57,66 @@ class BoltzmannSolver(object):
         # step
         self.set_time_stepper(stepper)
 
-    def dfdt(self, state, dt):
-        return -self.convection(state, dt) + 1/self.kn*self.collision(state.f)[1:-1]
+    def dfdt(self, state):
+        return -self.convection(state) + 1/self.kn*self.collision(state.f)[1:-1]
 
-    def euler(self, solution, Dt, dt, nt):
-        solution.state.f[1:-1] += Dt*self.dfdt(solution.state, dt)
+    def euler(self, solution, dt):
+        solution.state.f[1:-1] = solution.state.f[1:-1] + dt*self.dfdt(solution.state)
 
-    def proj_int(self, solution, Dt, dt, nt):
+    def rk4(self, solution, dt):
         state = solution.state
+        f0 = state.f.copy()[1:-1]
+        k1 = self.dfdt(state)
+        state.f[1:-1] = f0 + 0.5*k1
+        k2 = self.dfdt(state)
+        state.f[1:-1] = f0 + 0.5*k2
+        k3 = self.dfdt(state)
+        state.f[1:-1] = f0 + 0.5*k3
+        k4 = self.dfdt(state)
+
+        state.f[1:-1] = f0 + dt*(1/6*k1 + 1/3*k2 + 1/3*k3 + 1/6*k4)
+
+    def pfe(self, solution, Dt, dt, nt):
+        state = solution.state
+
         for _ in tnrange(nt, desc='Inner', leave=False):
-            state.f[1:-1] += dt*self.dfdt(state, dt)
-            
-        state.f[1:-1] += (Dt - nt*dt)*self.dfdt(state, dt)
+            self.euler(solution, dt)
+        state.f[1:-1] = state.f[1:-1] + (Dt - nt*dt)*self.dfdt(state)
+
+    def prk4(self, solution, Dt, dt, nt):
+        state = solution.state
+
+        for _ in tnrange(nt, desc='k1', leave=False):
+            self.euler(solution, dt)
+        k1 = self.dfdt(solution.state)
+        f_nt_1 = (dt*k1 + state.f[1:-1]).copy()
+
+        state.f[1:-1] = f_nt_1 + (0.5*Dt - (nt+1)*dt)*k1
+        for _ in tnrange(nt, desc='k2', leave=False):
+            self.euler(solution, dt)
+        k2 = self.dfdt(state)
+
+        state.f[1:-1] = f_nt_1 + (0.5*Dt - (nt+1)*dt)*k2
+        for _ in tnrange(nt, desc='k3', leave=False):
+            self.euler(solution, dt)
+        k3 = self.dfdt(state)
+
+        state.f[1:-1] = f_nt_1 + (Dt - (nt+1)*dt)*k3
+        for _ in tnrange(nt, desc='k4', leave=False):
+            self.euler(solution, dt)
+        k4 = self.dfdt(state)
+
+        state.f[1:-1] = f_nt_1 + (Dt - (nt+1)*dt)*(1/6*k1 + 1/3*k2 + 1/3*k3 + 1/6*k4)
 
     def set_time_stepper(self, stepper='euler'):
         """Sets the time step scheme to be used while solving given a
         string which should be one of ['euler', 'proj_int']."""
         if stepper == 'euler':
-            self.step = self.euler
-        elif stepper == 'proj_int':
-            self.step = self.proj_int
+            self.step = lambda solution, Dt, dt, nt: self.euler(solution, Dt)
+        elif stepper == 'pfe':
+            self.step = self.pfe
+        elif stepper == 'prk4':
+            self.step = self.prk4
 
     def solve(self, solution, Dt, Nt, dt, nt):
         for _ in tnrange(Nt, desc='Outer'):
