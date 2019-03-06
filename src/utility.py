@@ -1,9 +1,8 @@
 import json
+from math import pi
 
 import matplotlib.pyplot as plt
 import numpy as np
-
-from math import pi
 
 EPS = 1e-8
 

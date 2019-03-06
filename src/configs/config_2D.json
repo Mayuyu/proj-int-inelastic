@@ -4,7 +4,7 @@
     "xmax": 1.0,
     "nv": 32,
     "s": 3.9,
-    "lv": "0.5*(3 + np.sqrt(2))*S",
+    "lv": "0.5*(3 + np.sqrt(2))*s",
     "nv_g": 30,
     "nv_sigma": 30,
     "gamma": 0,
