@@ -143,16 +143,17 @@ class FastSpectralCollision2D(object):
 
     def _fftw_planning(self):
         N, M, N_R = self._N, self._M, self._N_R
+#         shape = (N,N)
+        shape = (self._nx, N, N)
         # pyfftw planning of (N, N)
-        array_2d = pyfftw.empty_aligned((self._nx,)+(N, N), dtype=DTYPE)
+        array_2d = pyfftw.empty_aligned(shape, dtype=DTYPE)
         self._fft2 = pyfftw.builders.fft2(array_2d, axes=(-1, -2))
         self._ifft2 = pyfftw.builders.ifft2(array_2d, axes=(-1, -2))
         # pyfftw planning of (N, N, N_R)
-        array_3d = pyfftw.empty_aligned((self._nx,)+(N, N, N_R), dtype=DTYPE)
+        array_3d = pyfftw.empty_aligned(shape+(N_R,), dtype=DTYPE)
         self._fft3 = pyfftw.builders.fftn(array_3d, axes=(-2, -3))
         self._ifft3 = pyfftw.builders.ifftn(array_3d, axes=(-2, -3))
         # pyfftw planning of (N, N, M, N_R)
-        array_4d = pyfftw.empty_aligned(
-            (self._nx,)+(N, N, M, N_R), dtype=DTYPE)
+        array_4d = pyfftw.empty_aligned(shape+(M,N_R), dtype=DTYPE)
         self._fft4 = pyfftw.builders.fftn(array_4d, axes=(-3, -4))
         self._ifft4 = pyfftw.builders.ifftn(array_4d, axes=(-3, -4))
