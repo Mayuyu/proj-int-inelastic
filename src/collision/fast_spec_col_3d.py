@@ -3,9 +3,13 @@
 from math import pi
 
 import numpy as np
-
 import pyfftw
-from utility import sinc
+
+EPS = 1e-8
+
+
+def sinc(x):
+    return np.sin(x+EPS)/(x+EPS)
 
 
 class FastSpectralCollison3D(object):

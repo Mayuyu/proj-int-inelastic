@@ -55,6 +55,13 @@ class Grid(object):
         return len(self._dimensions)
 
     @property
+    def num_dim_x(self):
+        return self._num_dim_x
+    @num_dim_x.setter
+    def num_dim_x(self, num_dim_x):
+        self._num_dim_x = num_dim_x
+
+    @property
     def dimensions(self):
         return [getattr(self, name) for name in self._dimensions]
 
@@ -72,6 +79,7 @@ class Grid(object):
 
         self._c_centers = None
         self._c_nodes = None
+        self._num_dim_x = None
 
         if isinstance(dimensions, Dimension):
             dimensions = [dimensions]

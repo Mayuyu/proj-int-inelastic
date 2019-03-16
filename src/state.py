@@ -8,7 +8,7 @@ class State(object):
     computational grid."""
 
     def __getattr__(self, key):
-        if key in ('num_dim', 'c_centers', 'c_nodes', 'num_cells', 'lower', 'upper', 'delta', 'centers'):
+        if key in ('num_dim', 'num_dim_x', 'c_centers', 'c_nodes', 'num_cells', 'lower', 'upper', 'delta', 'centers'):
             return self._get_grid_attribute(key)
         else:
             raise AttributeError("'State' object has no attribute '"+key+"'")
@@ -26,8 +26,14 @@ class State(object):
         return [self.sum_f(self.f*self.c_centers[i]) for i in (-2, -1)]
 
     @property
-    def E(self):
-        return 0.5*self.sum_f(self.f*(self.c_centers[-2]**2 + self.c_centers[-1]**2))
+    def T(self):
+        E = 0.5*self.sum_f(self.f*(self.c_centers[-2]**2 + self.c_centers[-1]**2))
+        u_square = 0.
+        for u in self.u:
+            u_square += u**2
+
+        return E / self.rho - 0.5*u_square
+
 
     def __init__(self, geom):
         if isinstance(geom, Grid):
@@ -37,8 +43,8 @@ class State(object):
         else:
             raise Exception("Must be initialzed with a Grid object.")
 
+        self.problem_data = {}
         self.t = 0.
-
         self.f = self.new_array()
 
     def new_array(self):
@@ -68,33 +74,32 @@ class State(object):
     def sum_f(self, f):
         return np.sum(f, axis=(-1, -2))*self.delta[-1]*self.delta[-2]
 
-    # def plot_f(self, i, cl=1):
-    #     """Plot the contour in velocity space for given index i"""
-    #     dv = self.dv
-    #     v = np.mgrid[self.vmin+dv/2:self.vmax+dv/2:dv,
-    #                  self.vmin+dv/2:self.vmax+dv/2:dv]
+    def set_f_from_fbc(self, num_ghost, fbc):
+        """
+        Set the value of q using the array fbc. Typically this is called
+        after fbc has been updated by the solver.
+        """
 
-    #     fig, ax = plt.subplots()
-    #     cs = ax.contour(v[0], v[1], self.f[i])
-    #     if cl == 1:
-    #         ax.clabel(cs, inline=0.5)
+        num_dim = self.grid.num_dim_x
 
-    #     ax.grid(linestyle=':')
-    #     plt.show()
+        if num_dim == 1:
+            self.f = fbc[num_ghost:-num_ghost]
+        elif num_dim == 2:
+            self.f = fbc[num_ghost:-num_ghost, num_ghost:-num_ghost]
+        else:
+            raise Exception("Assumption (1 <= num_dim_x <= 2) violated.")
 
-    # def plot_macro(self, macro='velocity'):
-    #     """Plot the macroscopic quantities: density, velocity and temperature."""
-    #     fig, ax = plt.subplots()
-    #     if macro == 'density':
-    #         cs = ax.plot(self.x, self.rho)
-    #         ax.set_ylabel(r'$\rho(x)$', fontsize='large')
-    #     elif macro == 'temperature':
-    #         cs = ax.plot(self.x, self.temperature())
-    #         ax.set_ylabel(r'$T(x)$', fontsize='large')
-    #     else:
-    #         cs = ax.plot(self.x, self.velocity())
-    #         ax.set_ylabel(r'$u(x)$', fontsize='large')
+    def get_fbc_from_f(self, num_ghost, fbc):
+        """
+        Fills in the interior of fbc by copying q to it.
+        """
+        num_dim = self.grid.num_dim_x
 
-    #     ax.set_xlabel(r'$x$', fontsize='large')
-    #     ax.grid(which='both', linestyle=':')
-    #     plt.show()
+        if num_dim == 1:
+            fbc[num_ghost:-num_ghost] = self.f
+        elif num_dim == 2:
+            fbc[num_ghost:-num_ghost, num_ghost:-num_ghost] = self.f
+        else:
+            raise Exception("Assumption (1 <= num_dim <= 2) violated.")
+
+        return fbc

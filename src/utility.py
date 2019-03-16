@@ -6,10 +6,6 @@ import numpy as np
 
 EPS = 1e-8
 
-
-def sinc(x):
-    return np.sin(x+EPS)/(x+EPS)
-
 # upwind 1st order difference for all interior points
 
 
