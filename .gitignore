@@ -1,6 +1,5 @@
 # Project related aux files
 *.pdf
-*.ipynb
 *.tex
 refs/
 notes/
