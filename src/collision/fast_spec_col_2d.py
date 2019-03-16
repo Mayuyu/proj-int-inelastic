@@ -93,6 +93,9 @@ class FastSpectralCollision2D(object):
     def laplacian(self, f):
         return np.real(self._ifft2(self._lapl*self._fft2(f)))
 
+    def col_heat(self, f, eps):
+        return self.col_sep(f) + eps*self.laplacian(f)
+
     def col_heat_hat_full(self, f_hat, eps):
         # ifft
         f = self._ifft2(f_hat)

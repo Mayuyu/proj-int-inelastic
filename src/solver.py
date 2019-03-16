@@ -152,6 +152,8 @@ class BoltzmannSolver(Solver):
         self.order = 2
         self.limiters = tvd.minmod
         self.time_integrator = 'Euler'
+        self.inner_steps = 3
+        self.inner_dt = kn
 
         # Call general initialization function
         super(BoltzmannSolver, self).__init__(riemann_solver, collision_operator)
@@ -171,19 +173,24 @@ class BoltzmannSolver(Solver):
         Evolve solution one time step.
         """
         state = solution.state
-        self.df_dt = self.df(state) / self.dt
 
         if self.time_integrator == 'Euler':
-            state.f += self.dt*self.df_dt
+            state.f += self.df(state, self.dt)
+        elif self.time_integrator == 'PFE':
+            ddt = self.dt/self.inner_dt - self.inner_steps
+            for _ in tnrange(self.inner_steps, desc='Inner', leave=False):
+                state.f += self.df(state, self.inner_dt)
+            state.f += ddt*self.df(state, self.inner_dt)
 
-    def df(self, state):
-        deltaf = self.df_advection(state)
+
+    def df(self, state, dt):
+        deltaf = self.df_advection(state, dt)
         if self.collision is not None:
-            deltaf += self.dt*self.collision(state.f) / self.kn
+            deltaf += dt*self.collision(state.f) / self.kn
 
         return deltaf
             
-    def df_advection(self, state):
+    def df_advection(self, state, dt):
         raise NotImplementedError('You must subclass BoltzmannSolver.')
 
     # def rk4(self, solution, dt):
@@ -240,13 +247,13 @@ class BoltzmannSolver1D(BoltzmannSolver):
 
         super(BoltzmannSolver1D, self).__init__(kn, riemann_solver, collision_operator)
 
-    def df_advection(self, state):
+    def df_advection(self, state, dt):
         # Apply boundary condition
         self._apply_bcs(state)
         f = self.fbc
         
         grid = state.grid
-        dtdx = self.dt / grid.delta[0]
+        dtdx = dt / grid.delta[0]
         df = np.zeros(f.shape)
 
         # limiter = np.array(self._mthlim, ndimn=1)
