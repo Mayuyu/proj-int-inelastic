@@ -1,6 +1,6 @@
 import numpy as np
 
-from geometry import Domain, Grid
+from src.geometry import Domain, Grid
 
 
 class State(object):

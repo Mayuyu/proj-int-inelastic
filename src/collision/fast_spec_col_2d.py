@@ -66,6 +66,7 @@ class FastSpectralCollision2D(object):
         self._v = None
         self._v_norm = None
 
+        self.num_dim_x = config.dim_x
         self._nx = config.nx
 
         self._fftw_planning()
@@ -147,8 +148,15 @@ class FastSpectralCollision2D(object):
 
     def _fftw_planning(self):
         N, M, N_R = self._N, self._M, self._N_R
-        # shape = (N,N)
-        shape = (self._nx, N, N)
+        if self.num_dim_x == 0:
+            shape = (N,N)
+        elif self.num_dim_x == 1:
+            shape = (self._nx, N, N)
+        elif self.num_dim_x == 2:
+            shape = (self._nx, self._nx, N, N)
+        else:
+            raise Exception("x dim should be less than v dim.")
+            
         # pyfftw planning of (N, N)
         array_2d = pyfftw.empty_aligned(shape, dtype=DTYPE)
         self._fft2 = pyfftw.builders.fft2(array_2d, axes=(-1, -2))

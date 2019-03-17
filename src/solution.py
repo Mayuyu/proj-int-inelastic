@@ -1,7 +1,7 @@
 import numpy as np
 
-from geometry import Dimension, Domain, Grid
-from state import State
+from src.geometry import Dimension, Domain, Grid
+from src.state import State
 
 
 class Solution(object):
