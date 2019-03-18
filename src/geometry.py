@@ -57,6 +57,7 @@ class Grid(object):
     @property
     def num_dim_x(self):
         return self._num_dim_x
+
     @num_dim_x.setter
     def num_dim_x(self, num_dim_x):
         self._num_dim_x = num_dim_x
@@ -137,6 +138,16 @@ class Grid(object):
         index = [np.array(i) for i in ind]
         return np.array([self.c_centers[i][index] for i in range(self.num_dim)])
 
+    def __deepcopy(self, memo={}):
+        import copy
+        result = self.__class__(copy.deepcopy(self.dimensions))
+        result.__init__(copy.deepcopy(self.dimensions))
+
+        for attr in ('_c_centers', '_c_nodes', '_num_dim_x'):
+            setattr(result, attr, getattr(self, attr))
+
+        return result
+
 
 class Dimension(object):
 
@@ -192,6 +203,24 @@ class Dimension(object):
         self._centers = None
         self._nodes = None
         self._check_validity()
+
+    def centers_with_ghost(self, num_ghost):
+        r"""(ndarrary(:)) - Location of all cell center coordinates
+        for this dimension, including centers of ghost cells."""
+        centers = self.centers
+        pre = self.lower+(np.arange(-num_ghost, 0)+0.5)*self.delta
+        post = self.upper + self.delta * (np.arange(num_ghost) + 0.5)
+        return np.hstack((pre, centers, post))
+
+    def nodes_with_ghost(self, num_ghost):
+        r"""(ndarrary(:)) - Location of all edge coordinates
+        for this dimension, including nodes of ghost cells."""
+        nodes = self.nodes
+        pre = np.linspace(self.lower-num_ghost*self.delta,
+                          self.lower-self.delta, num_ghost)
+        post = np.linspace(self.upper+self.delta, self.upper +
+                           num_ghost*self.delta, num_ghost)
+        return np.hstack((pre, nodes, post))
 
     def __init__(self, lower, upper, num_cells, name='x'):
 

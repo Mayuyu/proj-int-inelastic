@@ -1,8 +1,8 @@
 import numpy as np
 from tqdm import tnrange
 
-from src.limiters import tvd
-from src.solver import Solver
+from .limiters import tvd
+from .solver import Solver
 
 
 class BoltzmannSolver(Solver):
@@ -13,9 +13,13 @@ class BoltzmannSolver(Solver):
         self.num_ghost = 2
         self.order = 2
         self.limiters = tvd.minmod
+
         self.time_integrator = 'Euler'
-        self.inner_steps = 3
-        self.inner_dt = kn
+  
+        # Used only if time integrator is 'PFE'or 'TPI3'
+        self.num_levels = 3
+        self.inner_steps = [3, 3, 3]
+        self.inner_dt = [kn, 5*kn, 10*kn]
 
         # Call general initialization function
         super(BoltzmannSolver, self).__init__(
@@ -40,10 +44,37 @@ class BoltzmannSolver(Solver):
         if self.time_integrator == 'Euler':
             state.f += self.df(state, self.dt)
         elif self.time_integrator == 'PFE':
-            ddt = self.dt/self.inner_dt - self.inner_steps
-            for _ in tnrange(self.inner_steps, desc='Inner', leave=False):
-                state.f += self.df(state, self.inner_dt)
-            state.f += ddt*self.df(state, self.inner_dt)
+            M = self.dt/self.inner_dt[0] - self.inner_steps[0]
+            for _ in tnrange(self.inner_steps[0], desc='Inner', leave=False):
+                df = self.df(state, self.inner_dt[0])
+                state.f += df
+            state.f += M*df
+        elif self.time_integrator == 'TPI2':
+            M1 = self.dt/self.inner_dt[1] - self.inner_steps[1]
+            for _ in tnrange(self.inner_steps[1], desc='Level 1', leave=False):
+                M0 = self.inner_dt[1]/self.inner_dt[0] - self.inner_steps[0]
+                for _ in tnrange(self.inner_steps[0], desc='Level 0', leave=False):
+                    df0 = self.df(state, self.inner_dt[0])
+                    state.f += df0
+                df1 = M0*df0
+                state.f += df1
+            state.f += M1*df1
+        elif self.time_integrator == 'TPI3':
+            M2 = self.dt/self.inner_dt[2] - self.inner_steps[2]
+            for _ in tnrange(self.inner_steps[2], desc='Level 2', leave=False):
+                M1 = self.inner_dt[2]/self.inner_dt[1] - self.inner_steps[1]
+                for _ in tnrange(self.inner_steps[1], desc='Level 1', leave=False):
+                    M0 = self.inner_dt[1]/self.inner_dt[0] - self.inner_steps[0]
+                    for _ in tnrange(self. inner_steps[0], desc='Level 0', leave=False):
+                        df0 = self.df(state, self.inner_dt[0])
+                        state.f += df0
+                    df1 = M0*df0
+                    state.f += df1
+                df2 = M1*df1
+                state.f += df2
+            state.f += M2*df2
+        else:
+            raise NotImplementedError("This time integrator is not implemented.")
 
     def df(self, state, dt):
         deltaf = self.df_advection(state, dt)

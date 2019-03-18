@@ -60,12 +60,12 @@ class State(object):
         result = self.__class__(copy.deepcopy(self.grid))
         result.__init__(copy.deepcopy(self.grid))
 
-        for attr in ('t'):
+        for attr in ('t', 'problem_data'):
             setattr(result, attr, copy.deepcopy(getattr(self, attr)))
 
         if self.f is not None:
             result.f = copy.deepcopy(self.f)
-
+        
         return result
 
     def get_f_global(self):
