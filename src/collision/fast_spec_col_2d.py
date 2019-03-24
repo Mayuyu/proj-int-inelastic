@@ -67,7 +67,8 @@ class FastSpectralCollision2D(object):
         self._v_norm = None
 
         self.num_dim_x = config.dim_x
-        self._nx = config.nx
+        if self.num_dim_x:
+            self._nx = config.nx
 
         self._fftw_planning()
         self._precompute()
