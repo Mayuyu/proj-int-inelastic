@@ -40,6 +40,14 @@ class FastSpectralCollision2D(object):
     @property
     def e(self):
         return self._e
+    
+    @property
+    def fft2(self):
+        return self._fft2
+    
+    @property
+    def ifft2(self):
+        return self._ifft2
 
     # Initialize parameters
     def __init__(self, config, e=None, N=None):
@@ -52,8 +60,8 @@ class FastSpectralCollision2D(object):
 
         s = config.s
         self._R = 2*s
-#         self._L = 0.5*(3 + np.sqrt(2))*s
-        self._L = config.l
+        self._L = 0.5*(3 + np.sqrt(2))*s
+#         self._L = config.l
         if N is None:
             self._N = config.nv
         else:
@@ -116,6 +124,18 @@ class FastSpectralCollision2D(object):
         Q_loss = 2*pi*np.sum(self._r_w*self._F_k_loss
                              * self._fft3(self._ifft3(self._j0*f_hat[..., None])*f[..., None]), axis=(-1))
         return (Q_gain - Q_loss)/(2*pi) + eps*self._lapl*f_hat
+    
+    def inv_col_heat(self, f_hat, eps, dt):
+        # ifft of f
+        f = self._ifft2(f_hat)
+        # gain term
+        Q_gain = self._s_w*np.sum(self._r_w*self._F_k_gain
+                                  * self._fft4(self._ifft4(self._exp*f_hat[..., None, None])*f[..., None, None]), axis=(-1, -2))
+        # loss term
+        Q_loss = 2*pi*np.sum(self._r_w*self._F_k_loss
+                             * self._fft3(self._ifft3(self._j0*f_hat[..., None])*f[..., None]), axis=(-1))
+        return (f_hat + dt*(Q_gain - Q_loss)/(2*pi)) / (1 - dt*eps*self._lapl)
+        
 
     # ========================================
     # Precompute quantities and FFTw planning

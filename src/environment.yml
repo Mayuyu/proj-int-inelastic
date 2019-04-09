@@ -1,10 +1,11 @@
-name: proj_int
-channels:
-  - conda-forge
+name: inelasticboltzmann
 dependencies:
   - numpy
   - scipy
   - jupyterlab
   - matplotlib
-  - pyfftw
   - tqdm
+  - pip
+  - pip:
+    - pyfftw
+    - clawpack
