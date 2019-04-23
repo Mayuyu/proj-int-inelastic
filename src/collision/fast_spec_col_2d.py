@@ -6,7 +6,7 @@ import numpy as np
 import pyfftw
 from scipy import special
 
-pyfftw.config.NUM_THREADS = 8
+# pyfftw.config.NUM_THREADS = 8
 pyfftw.config.PLANNER_EFFORT = 'FFTW_MEASURE'
 
 DTYPE = 'complex128'
@@ -40,11 +40,11 @@ class FastSpectralCollision2D(object):
     @property
     def e(self):
         return self._e
-    
+
     @property
     def fft2(self):
         return self._fft2
-    
+
     @property
     def ifft2(self):
         return self._ifft2
@@ -100,6 +100,18 @@ class FastSpectralCollision2D(object):
                              * self._ifft3(self._j0*f_hat[..., None])*f[..., None], axis=(-1))
         return np.real(self._ifft2(Q_gain) - Q_loss) / (2*pi)
 
+    def col(self, f):
+        f_hat = self._fft2(f).copy()
+        Q_gain, Q_loss = 0., 0.
+        for j in range(self._N_R):
+            Q_loss += 2 * pi * self._r_w[j] * self._F_k_loss[j] * self._ifft2(
+                self._j0[:, :, j] * f_hat) * f
+            for i in range(self._M):
+                Q_gain += self._s_w * self._r_w[j] * self._F_k_gain[:, :, i, j] * self._fft2(
+                    self._ifft2(self._exp[:, :, i, j] * f_hat) * f
+                )
+        return np.real(self._ifft2(Q_gain) - Q_loss) / (2*pi)
+
     def laplacian(self, f):
         return np.real(self._ifft2(self._lapl*self._fft2(f)))
 
@@ -124,7 +136,7 @@ class FastSpectralCollision2D(object):
         Q_loss = 2*pi*np.sum(self._r_w*self._F_k_loss
                              * self._fft3(self._ifft3(self._j0*f_hat[..., None])*f[..., None]), axis=(-1))
         return (Q_gain - Q_loss)/(2*pi) + eps*self._lapl*f_hat
-    
+
     def inv_col_heat(self, f_hat, eps, dt):
         # ifft of f
         f = self._ifft2(f_hat)
@@ -135,7 +147,6 @@ class FastSpectralCollision2D(object):
         Q_loss = 2*pi*np.sum(self._r_w*self._F_k_loss
                              * self._fft3(self._ifft3(self._j0*f_hat[..., None])*f[..., None]), axis=(-1))
         return (f_hat + dt*(Q_gain - Q_loss)/(2*pi)) / (1 - dt*eps*self._lapl)
-        
 
     # ========================================
     # Precompute quantities and FFTw planning
@@ -170,23 +181,25 @@ class FastSpectralCollision2D(object):
     def _fftw_planning(self):
         N, M, N_R = self._N, self._M, self._N_R
         if self.num_dim_x == 0:
-            shape = (N,N)
+            shape = (N, N)
         elif self.num_dim_x == 1:
             shape = (self._nx, N, N)
         elif self.num_dim_x == 2:
             shape = (self._nx, self._nx, N, N)
         else:
             raise Exception("x dim should be less than v dim.")
-            
+
         # pyfftw planning of (N, N)
         array_2d = pyfftw.empty_aligned(shape, dtype=DTYPE)
-        self._fft2 = pyfftw.builders.fft2(array_2d, axes=(-1, -2))
-        self._ifft2 = pyfftw.builders.ifft2(array_2d, axes=(-1, -2))
+        self._fft2 = pyfftw.builders.fft2(
+            array_2d,  overwrite_input=True, avoid_copy=True)
+        self._ifft2 = pyfftw.builders.ifft2(
+            array_2d, overwrite_input=True, avoid_copy=True)
         # pyfftw planning of (N, N, N_R)
         array_3d = pyfftw.empty_aligned(shape+(N_R,), dtype=DTYPE)
         self._fft3 = pyfftw.builders.fftn(array_3d, axes=(-2, -3))
         self._ifft3 = pyfftw.builders.ifftn(array_3d, axes=(-2, -3))
         # pyfftw planning of (N, N, M, N_R)
-        array_4d = pyfftw.empty_aligned(shape+(M,N_R), dtype=DTYPE)
+        array_4d = pyfftw.empty_aligned(shape+(M, N_R), dtype=DTYPE)
         self._fft4 = pyfftw.builders.fftn(array_4d, axes=(-3, -4))
         self._ifft4 = pyfftw.builders.ifftn(array_4d, axes=(-3, -4))
