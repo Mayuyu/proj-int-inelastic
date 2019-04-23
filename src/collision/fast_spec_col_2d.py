@@ -8,7 +8,7 @@ import pyfftw
 from scipy import special
 
 pyfftw.config.NUM_THREADS = multiprocessing.cpu_count()
-pyfftw.config.PLANNER_EFFORT = 'FFTW_MEASURE'
+pyfftw.config.PLANNER_EFFORT = 'FFTW_ESTIMATE'
 
 DTYPE = 'complex128'
 
