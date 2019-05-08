@@ -1,16 +1,6 @@
-# Project related aux files
+# Project specified files
 *.pdf
-*.tex
-refs/
-notes/
-ipynb/
-data_figs/
-
-.vscode
-_output/
-.DS_Store
-.Rhistory
-.idea/
+*.ipynb
 ## python
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -361,4 +351,3 @@ TSWLatexianTemp*
 
 # standalone packages
 *.sta
-src/autoencoder/test_1.ipynb
