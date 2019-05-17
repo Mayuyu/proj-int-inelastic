@@ -8,6 +8,11 @@ __pycache__/
 *.npz
 *$py.class
 
+# Vscode
+.vscode/
+
+.DS_Store
+
 # C extensions
 *.so
 
