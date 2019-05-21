@@ -1,6 +1,7 @@
 # Project specified files
 *.pdf
 *.ipynb
+_output/
 ## python
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -8,7 +9,7 @@ __pycache__/
 *.npz
 *$py.class
 
-# Vscode
+# Vscodde
 .vscode/
 
 .DS_Store
