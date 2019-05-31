@@ -94,8 +94,10 @@ class FastSpectralCollision2D(object):
     def laplacian(self, f):
         return np.real(self._ifft2(self._lapl*self._fft2(f)))
 
-    def col_heat(self, f, eps, col=col_sep):
-        return col(f) + eps*self.laplacian(f)
+    def col_heat(self, f, eps, col='new'):
+        if col == 'new':
+            col = self.col_new
+        return col(f) + eps * self.laplacian(f)
 
     # ========================================
     # Precompute quantities and FFTw planning

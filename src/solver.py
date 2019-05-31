@@ -122,7 +122,7 @@ class Solver(object):
                         'dt does not divide (tend-tstart) and dt is fixed!')
 
         # Main time-stepping loop
-        for n in tnrange(self.max_steps):
+        for n in range(self.max_steps):
 
             if self.before_step is not None:
                 self.before_step(self, solution.state)

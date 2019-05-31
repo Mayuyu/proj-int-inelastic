@@ -96,7 +96,7 @@ class BoltzmannSolver(Solver):
         return deltaf
 
     def df_advection(self, state, dt):
-        raise NotImplementedError('You must subclass the BoltzmannSolver.')
+        raise NotImplementedError("You must subclass the BoltzmannSolver.")
 
 
 # ==================== Boltzmann solver for 1D in x ========================
@@ -136,49 +136,3 @@ class BoltzmannSolver1D(BoltzmannSolver):
             df[LL:UL-1] -= dtdx * (F[LL+1:UL]-F[LL:UL-1])
 
         return df[self.num_ghost:-self.num_ghost]
-
-    # def rk4(self, solution, dt):
-    #     state = solution.state
-    #     f0 = state.f.copy()[1:-1]
-    #     k1 = self.dfdt(state)
-    #     state.f[1:-1] = f0 + 0.5*k1
-    #     k2 = self.dfdt(state)
-    #     state.f[1:-1] = f0 + 0.5*k2
-    #     k3 = self.dfdt(state)
-    #     state.f[1:-1] = f0 + 0.5*k3
-    #     k4 = self.dfdt(state)
-
-    #     state.f[1:-1] = f0 + dt*(1/6*k1 + 1/3*k2 + 1/3*k3 + 1/6*k4)
-
-    # def pfe(self, solution, Dt, dt, nt):
-    #     state = solution.state
-
-    #     for _ in tnrange(nt, desc='Inner', leave=False):
-    #         self.euler(solution, dt)
-    #     state.f[1:-1] = state.f[1:-1] + (Dt - nt*dt)*self.dfdt(state)
-
-    # def prk4(self, solution, Dt, dt, nt):
-    #     state = solution.state
-
-    #     for _ in tnrange(nt, desc='k1', leave=False):
-    #         self.euler(solution, dt)
-    #     k1 = self.dfdt(solution.state)
-    #     f_nt_1 = (dt*k1 + state.f[1:-1]).copy()
-
-    #     state.f[1:-1] = f_nt_1 + (0.5*Dt - (nt+1)*dt)*k1
-    #     for _ in tnrange(nt, desc='k2', leave=False):
-    #         self.euler(solution, dt)
-    #     k2 = self.dfdt(state)
-
-    #     state.f[1:-1] = f_nt_1 + (0.5*Dt - (nt+1)*dt)*k2
-    #     for _ in tnrange(nt, desc='k3', leave=False):
-    #         self.euler(solution, dt)
-    #     k3 = self.dfdt(state)
-
-    #     state.f[1:-1] = f_nt_1 + (Dt - (nt+1)*dt)*k3
-    #     for _ in tnrange(nt, desc='k4', leave=False):
-    #         self.euler(solution, dt)
-    #     k4 = self.dfdt(state)
-
-    #     state.f[1:-1] = f_nt_1 + (Dt - (nt+1)*dt) * \
-    #         (1/6*k1 + 1/3*k2 + 1/3*k3 + 1/6*k4)
