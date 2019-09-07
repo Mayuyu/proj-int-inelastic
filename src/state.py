@@ -23,7 +23,8 @@ class State(object):
 
     @property
     def u(self):
-        return [self.sum_f(self.f*self.c_centers[i]) for i in (-2, -1)]
+        return [self.sum_f(self.f*self.c_centers[i]) / self.rho for i in (-2, -1)]
+        # return [self.sum_f(self.f*self.c_centers[i]) for i in (-2, -1)]
 
     @property
     def T(self):
