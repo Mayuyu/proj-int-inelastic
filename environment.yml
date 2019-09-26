@@ -1,13 +1,13 @@
-name: pro-int-inelastic
+name: inelastic-boltz
 dependencies:
   - numpy
   - scipy
   - matplotlib
   - tqdm
-  - pip
   # For ipython and jupyter lab
   - ipykernel
   - ipywidgets
+  - pip
   - pip:
     - pyfftw
     - clawpack

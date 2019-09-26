@@ -1,19 +1,31 @@
 import numpy as np
+from math import pi
 from tqdm import tnrange
 
 from .limiters import tvd
 from .solver import Solver
 
+def maxwellian(vx, vy, rho, u, T):
+    rho = rho[:, None, None]
+    u = u[:, None, None]
+    T = T[:, None, None]
+    return rho / (2*pi*T) * np.exp(-((vx-u)**2+vy**2)/(2*T))
+
 
 class BoltzmannSolver(Solver):
+    
     def __init__(self, kn=1.0, riemann_solver=None, collision_operator=None):
 
         self.kn = kn
+        self.tau = None
+        self.e = None
         self.num_ghost = 2
         self.order = 2
         self.limiters = tvd.minmod
 
         self.time_integrator = "Euler"
+        # Only for convex splitting
+        self.penalty = None
         # Used only if time integrator is 'PFE'or 'TPI3'
         self.num_levels = 3
         self.inner_steps = [3, 3, 3]
@@ -33,14 +45,24 @@ class BoltzmannSolver(Solver):
         r"""
         Evolve solution one time step.
         """
-        if self.time_integrator == "Euler":
+        if self.time_integrator == 'Euler':
             self.euler_step(solution, take_one_step, tstart, tend)
-        elif self.time_integrator == "PFE":
+        elif self.time_integrator == 'PFE':
             self.proj_euler_step(solution, take_one_step, tstart, tend)
-        elif self.time_integrator == "TPI2":
+        elif self.time_integrator == 'TPI2':
             self.tel_proj_step2(solution, take_one_step, tstart, tend)
-        elif self.time_integrator == "TPI3":
+        elif self.time_integrator == 'TPI3':
             self.tel_proj_step3(solution, take_one_step, tstart, tend)
+        elif self.time_integrator == 'CONSP':
+            if self.penalty:
+                self.convex_splitting_step(solution, take_one_step, tstart, tend)
+            else:
+                raise ValueError("The penalty parameter is not given. Please specify it!")
+        elif self.time_integrator == 'CONSP_M':
+            if self.penalty and self.e and (self.tau is not None):
+                self.convex_splitting_maxwellian_step(solution, take_one_step, tstart, tend)
+            else:
+                raise ValueError("The penalty parameter, e or tau are not given. Please specify it!")
         else:
             raise NotImplementedError("This time integrator is not implemented.")
 
@@ -48,6 +70,22 @@ class BoltzmannSolver(Solver):
     def euler_step(self, solution, take_one_step, tstart, tend):
         state = solution.state
         state.f += self.df(state, self.dt)
+
+    def convex_splitting_step(self, solution, take_one_step, tstart, tend):
+        state = solution.state  
+        if self.collision is not None:
+            state.f += self.dt / (self.kn+self.penalty*self.dt) * self.collision(state.f)
+        state.f += self.df_advection(state, self.dt)
+
+    def convex_splitting_maxwellian_step(self, solution, take_one_step, tstart, tend):
+        state = solution.state
+        if self.collision is not None:
+            _, vx, vy = state.c_centers
+            rho, u, T = state.rho, state.u[0], state.T
+            T_new = (T - 8*self.tau/(1-self.e**2)) * np.exp(-(1-self.e**2)/self.kn/4*rho*self.dt) + 8*self.tau/(1-self.e**2)
+            dm = maxwellian(vx, vy, rho, u, T_new) - maxwellian(vx, vy, rho, u, T)
+            state.f += self.dt/(self.kn+self.penalty*self.dt)*self.collision(state.f) + self.penalty*self.dt/(self.kn+self.penalty*self.dt)*dm
+        state.f += self.df_advection(state, self.dt)
 
     def proj_euler_step(self, solution, take_one_step, tstart, tend):
         state = solution.state
@@ -132,4 +170,3 @@ class BoltzmannSolver1D(BoltzmannSolver):
             df[LL : UL - 1] -= dtdx * (F[LL + 1 : UL] - F[LL : UL - 1])
 
         return df[self.num_ghost : -self.num_ghost]
-
