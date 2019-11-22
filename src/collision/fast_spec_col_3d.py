@@ -3,6 +3,7 @@
 from math import pi
 
 import numpy as np
+import cupy as cp
 import pyfftw
 
 EPS = 1e-8
@@ -13,7 +14,7 @@ def sinc(x):
 
 
 class FastSpectralCollison3D(object):
-    def __init__(self, config, e=None, N=None):
+    def __init__(self, config, e=None, N=None, GPU=True):
         self._config = config
         self._gamma = config.physical_config.gamma
         if e is None:
@@ -38,6 +39,8 @@ class FastSpectralCollison3D(object):
 
         self._precompute()
         self._fftw_plan()
+        if GPU:
+            self._init_gpu_arrays()
 
     @property
     def dv(self):
@@ -115,6 +118,26 @@ class FastSpectralCollison3D(object):
         Q_loss = 4*pi*np.sum(self._r_w*self._F_k_loss
                              * self._fft4(self._ifft4(self._sinc*f_hat[..., None])*f[..., None]), axis=(-1))
         return (Q_gain - Q_loss)/(4*pi) + eps*self._lapl*f_hat
+
+    def col_gpu(self, f):
+        f_gpu = cp.asarray(f)
+        # fft of f
+        f_hat = cp.fft.fftn(f_gpu, axes=(0,1,2))
+        # gain term
+        Q_gain = cp.sum(self._s_w[:, None]*self._r_w*self._F_k_gain
+                        * cp.fft.fftn(cp.fft.ifftn(self._exp*f_hat[..., None, None], axes=(0,1,2))*f_gpu[..., None, None], axes=(0,1,2)), axis=(-1,-2))
+        # loss term
+        Q_loss = 4*pi*cp.sum(self._r_w*self._F_k_loss
+                             * cp.fft.fftn(cp.fft.ifftn(self._sinc*f_hat[..., None], axes=(0,1,2))*f_gpu[..., None], axes=(0,1,2)), axis=-1)
+        return cp.real(cp.fft.ifftn(Q_gain - Q_loss, axes=(0,1,2)))
+    
+    def _init_gpu_arrays(self):
+        self._s_w_gpu = cp.asarray(self._s_w)
+        self._r_w_gpu = cp.asarray(self._r_w)
+        self._F_k_gain_gpu = cp.asarray(self._F_k_gain)
+        self._exp_gpu = cp.asarray(self._exp)
+        self._F_k_loss_gpu = cp.asarray(self._F_k_loss)
+        self._sinc_gpu = cp.asarray(self._sinc)
 
     def _precompute(self):
         # legendre quadrature

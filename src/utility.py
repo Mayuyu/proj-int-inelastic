@@ -111,7 +111,7 @@ class DictionaryUtility:
                 return type('jo', (), {k: convert(v) for k, v in item.items()})
             if isinstance(item, list):
                 def yield_convert(item):
-                    for index, value in enumerate(item):
+                    for _, value in enumerate(item):
                         yield convert(value)
                 return list(yield_convert(item))
             else:
@@ -119,6 +119,7 @@ class DictionaryUtility:
 
         return convert(item)
 
+    @staticmethod
     def to_dict(obj):
         """
          Convert an object to a dictionary (recursive).

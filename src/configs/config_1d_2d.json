@@ -8,7 +8,7 @@
     "s": 3.5,
     "l": 8,
     "nv_g": 32,
-    "nv_sigma": 8,
+    "nv_sigma": 16,
     "gamma": 0,
     "e": 1
 }

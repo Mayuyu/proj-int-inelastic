@@ -1,22 +1,22 @@
 # fast_spec_col_2d
 
 import multiprocessing
-from math import pi
-
 import numpy as np
+import cupy as cp
 import pyfftw
+
+from math import pi
 from scipy import special
 
+DTYPE = 'complex128'
 pyfftw.config.NUM_THREADS = multiprocessing.cpu_count()
 pyfftw.config.PLANNER_EFFORT = 'FFTW_ESTIMATE'
-
-DTYPE = 'complex128'
 
 
 class FastSpectralCollision2D(object):
 
     # Initialize parameters
-    def __init__(self, config, e=None, N=None):
+    def __init__(self, config, e=None, N=None, GPU=True):
         # import parameters from config file
         self._gamma = config.gamma
         if e is None:
@@ -46,6 +46,8 @@ class FastSpectralCollision2D(object):
 
         self._fftw_planning()
         self._precompute()
+        if GPU:
+            self._init_gpu_arrays()
 
     def col_full(self, f):
         # fft of f
@@ -98,7 +100,70 @@ class FastSpectralCollision2D(object):
         if col == 'new':
             col = self.col_new
         return col(f) + eps * self.laplacian(f)
+    
+    def _init_gpu_arrays(self):
+        self._r_w_gpu = cp.asarray(self._r_w)
+        self._F_k_gain_gpu = cp.asarray(self._F_k_gain)
+        self._exp_gpu = cp.asarray(self._exp)
+        self._F_k_loss_gpu = cp.asarray(self._F_k_loss)
+        self._j0_gpu = cp.asarray(self._j0)
+        self._lapl_gpu = cp.asarray(self._lapl)
 
+    def col_sep_gpu_copy(self, f):
+        f_gpu = cp.asarray(f)
+        # fft of f
+        f_hat_gpu = cp.fft.fft2(f_gpu)
+        # gain term
+        Q_gain = self._s_w * cp.sum(
+            self._r_w_gpu * self._F_k_gain_gpu
+            * cp.fft.fft2(cp.fft.ifft2(
+                self._exp_gpu*f_hat_gpu[..., None, None], axes=(-3,-4))
+                * f_gpu[..., None, None], axes=(-3,-4)),
+            axis=(-1,-2)
+        )
+        # loss term
+        Q_loss = 2 * pi * cp.sum(
+            self._r_w_gpu * self._F_k_loss_gpu
+            * cp.fft.ifft2(self._j0_gpu*f_hat_gpu[..., None], axes=(-2,-3))
+            * f_gpu[..., None],
+            axis=-1
+        )
+        return cp.real(cp.fft.ifft2(Q_gain) - Q_loss).get() / (2*pi)
+
+    def laplacian_gpu_copy(self, f):
+        f_gpu = cp.asarray(f)
+        return cp.real(cp.fft.ifft2(self._lapl_gpu*cp.fft.fft2(f_gpu))).get()
+    
+    def col_heat_gpu_copy(self, f, eps):
+        return self.col_sep_gpu(f) + eps*self.laplacian_gpu(f)
+    
+    def col_sep_gpu(self, f):
+        # fft of f
+        f_hat = cp.fft.fft2(f)
+        # gain term
+        Q_gain = self._s_w * cp.sum(
+            self._r_w_gpu * self._F_k_gain_gpu
+            * cp.fft.fft2(cp.fft.ifft2(
+                self._exp_gpu*f_hat[..., None, None], axes=(-3,-4))
+                * f[..., None, None], axes=(-3,-4)),
+            axis=(-1,-2)
+        )
+        # loss term
+        Q_loss = 2 * pi * cp.sum(
+            self._r_w_gpu * self._F_k_loss_gpu
+            * cp.fft.ifft2(self._j0_gpu*f_hat[..., None], axes=(-2,-3))
+            * f[..., None],
+            axis=-1
+        )
+        return cp.real(cp.fft.ifft2(Q_gain) - Q_loss) / (2*pi)
+    
+    def laplacian_gpu(self, f):
+        return cp.real(cp.fft.ifft2(self._lapl_gpu*cp.fft.fft2(f)))
+    
+    def col_heat_gpu(self, f, eps):
+        return self.col_sep_gpu(f) + eps*self.laplacian_gpu(f)
+
+        
     # ========================================
     # Precompute quantities and FFTw planning
     # ========================================
