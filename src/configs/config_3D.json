@@ -2,7 +2,7 @@
     "domain_config": {
         "S": 4,
         "L": "0.5*(3 + np.sqrt(2))*S",
-        "N": 64
+        "N": 32
     },
     "quadrature_config": {
         "N_g": 30,

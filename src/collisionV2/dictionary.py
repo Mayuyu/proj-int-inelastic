@@ -1,22 +1,22 @@
-# The following modules are based on the "PyFR" implementation 
+# The following modules are based on the "PyFR" implementation
 # (See licences/LICENSE_PyFR)
 
 import io
 import os
 import re
+from configparser import ConfigParser, NoOptionError, NoSectionError
+
 import numpy as np
 
-from configparser import ConfigParser, NoSectionError, NoOptionError
+cfgsect = "config"
 
-cfgsect = 'config'
 
 def _ensure_float(m):
     m = m.group(0)
-    return m if any(c in m for c in '.eE') else m + '.'
+    return m if any(c in m for c in ".eE") else m + "."
 
 
 class Dictionary(object):
-
     def __init__(self, inistr=None, defaults={}):
         self._cp = cp = ConfigParser()
 
@@ -29,7 +29,7 @@ class Dictionary(object):
         if defaults:
             cp.read_dict(defaults)
 
-        self._dtypename = self.lookupordefault(cfgsect, 'precision', 'double')
+        self._dtypename = self.lookupordefault(cfgsect, "precision", "double")
         self._dtype = np_map[self._dtypename]
 
     @staticmethod
@@ -54,8 +54,7 @@ class Dictionary(object):
             val = default
         return val
 
-    def lookuppath(self, section, option, default, vars=None,
-                abs=False):
+    def lookuppath(self, section, option, default, vars=None, abs=False):
         path = self.lookupordefault(section, option, default, vars)
         path = os.path.expanduser(path)
 
@@ -68,20 +67,26 @@ class Dictionary(object):
         expr = self.lookup(section, option)
 
         # Ensure the expression does not contain invalid characters
-        if not re.match(r'[A-Za-z0-9 \t\n\r.,+\-*/%()]+$', expr):
-            raise ValueError('Invalid characters in expression')
+        if not re.match(r"[A-Za-z0-9 \t\n\r.,+\-*/%()]+$", expr):
+            raise ValueError("Invalid characters in expression")
 
         # Substitute variables
         if subs:
-            expr = re.sub(r'\b({0})\b'.format('|'.join(subs)),
-                          lambda m: subs[m.group(1)], expr)
+            expr = re.sub(
+                r"\b({0})\b".format("|".join(subs)),
+                lambda m: subs[m.group(1)],
+                expr,
+            )
 
         # Convert integers to floats
-        expr = re.sub(r'\b((\d+\.?\d*)|(\.\d+))([eE][+-]?\d+)?(?!\s*])',
-                      _ensure_float, expr)
+        expr = re.sub(
+            r"\b((\d+\.?\d*)|(\.\d+))([eE][+-]?\d+)?(?!\s*])",
+            _ensure_float,
+            expr,
+        )
 
         # Encase in parenthesis
-        return '({0})'.format(expr)
+        return "({0})".format(expr)
 
     def lookupfloat(self, section, option):
         return self._dtype(self.lookup(section, option))
@@ -102,9 +107,9 @@ class Dictionary(object):
 
     # Global configurations that are required in all systems
     @property
-    def dtypename(self): 
+    def dtypename(self):
         return self._dtypename
 
     @property
-    def dtype(self): 
+    def dtype(self):
         return self._dtype
