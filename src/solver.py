@@ -1,16 +1,13 @@
-from math import pi
-
 import numpy as np
 from tqdm import tnrange
 
 
-class BC():
+class BC:
     extrap = 1
     periodic = 2
 
 
 class Solver(object):
-
     @property
     def all_bcs(self):
         return self.bc_lower, self.bc_upper
@@ -40,8 +37,8 @@ class Solver(object):
 
         self.dt = self.dt_initial
 
-        self.bc_lower = [None]*(self.num_dim_x)
-        self.bc_upper = [None]*(self.num_dim_x)
+        self.bc_lower = [None] * (self.num_dim_x)
+        self.bc_upper = [None] * (self.num_dim_x)
 
         self._is_set_up = False
 
@@ -53,7 +50,9 @@ class Solver(object):
 
     def _allocate_bc_arrays(self, state):
         fbc_dim = [
-            n+2*self.num_ghost for n in state.grid.num_cells[:self.num_dim_x]] + [n for n in state.grid.num_cells[self.num_dim_x:]]
+            n + 2 * self.num_ghost
+            for n in state.grid.num_cells[: self.num_dim_x]
+        ] + [n for n in state.grid.num_cells[self.num_dim_x :]]
         self.fbc = np.zeros(fbc_dim)
         self._apply_bcs(state)
 
@@ -74,14 +73,16 @@ class Solver(object):
             for i in range(self.num_ghost):
                 array[i, ...] = array[self.num_ghost, ...]
         elif bc_type == BC.periodic:
-            array[:self.num_ghost, ...] = array[-2 *
-                                                self.num_ghost:-int(self.num_ghost), ...]
+            array[: self.num_ghost, ...] = array[
+                -2 * self.num_ghost : -int(self.num_ghost), ...
+            ]
         else:
             if bc_type is None:
-                raise Exception('Lower boundary condition not specified.')
+                raise Exception("Lower boundary condition not specified.")
             else:
                 raise NotImplementedError(
-                    "Boundary condition %s not implemented" % bc_type)
+                    "Boundary condition %s not implemented" % bc_type
+                )
 
     def _bc_upper(self, bc_type, array):
         r"""
@@ -90,15 +91,18 @@ class Solver(object):
 
         if bc_type == BC.extrap:
             for i in range(self.num_ghost):
-                array[-i-1, ...] = array[-int(self.num_ghost)-1, ...]
+                array[-i - 1, ...] = array[-int(self.num_ghost) - 1, ...]
         elif bc_type == BC.periodic:
-            array[-int(self.num_ghost):, ...] = array[self.num_ghost:2*self.num_ghost, ...]
+            array[-int(self.num_ghost) :, ...] = array[
+                self.num_ghost : 2 * self.num_ghost, ...
+            ]
         else:
             if bc_type is None:
-                raise Exception('Upper boundary condition not specified.')
+                raise Exception("Upper boundary condition not specified.")
             else:
                 raise NotImplementedError(
-                    "Boundary condition %s not implemented" % bc_type)
+                    "Boundary condition %s not implemented" % bc_type
+                )
 
     def evolve_to_time(self, solution, tend=None):
         if not self._is_set_up:
@@ -116,10 +120,12 @@ class Solver(object):
                 self.max_steps = 1
             else:
                 self.max_steps = int((tend - tstart + 1e-10) / self.dt)
-                if abs(self.max_steps*self.dt - (tend - tstart)) >      \
-                   1e-5 * (tend - tstart):
+                if abs(self.max_steps * self.dt - (tend - tstart)) > 1e-5 * (
+                    tend - tstart
+                ):
                     raise Exception(
-                        'dt does not divide (tend-tstart) and dt is fixed!')
+                        "dt does not divide (tend-tstart) and dt is fixed!"
+                    )
 
         # Main time-stepping loop
         for n in tnrange(self.max_steps):
@@ -129,7 +135,7 @@ class Solver(object):
 
             self.step(solution, take_one_step, tstart, tend)
 
-            solution.t = tstart + (n+1)*self.dt
+            solution.t = tstart + (n + 1) * self.dt
 
             # if take_one_step:
             #     break

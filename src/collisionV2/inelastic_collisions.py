@@ -166,9 +166,16 @@ class FSInelasticVHSCollision(BaseCollision):
     def _build_gpu(self, input_shape):
         # Compute axis
         axis = tuple(-(i + 1) for i in range(self.ndim))
+
         # cufft
-        cufft = lambda x: cp.fft.fftn(x, axes=axis)
-        cuifft = lambda x: cp.fft.ifftn(x, axes=axis)
+        def cufft(x):
+            return cp.fft.fftn(x, axes=axis)
+
+        def cuifft(x):
+            return cp.fft.ifftn(x, axes=axis)
+
+        # cufft = lambda x: cp.fft.fftn(x, axes=axis)
+        # cuifft = lambda x: cp.fft.ifftn(x, axes=axis)
         self.ffts_gpu = [cufft] * 3
         self.iffts_gpu = [cuifft] * 3
 
@@ -192,7 +199,7 @@ class FSInelasticVHSCollision(BaseCollision):
         self.ffts = self.ffts_gpu
         self.iffts = self.iffts_gpu
 
-    def collide(self, input_f):
+    def collide(self, input_f, with_loss=False):
         # fft of input
         f_hat = self.ffts[0](input_f)
         # Gain
@@ -208,8 +215,10 @@ class FSInelasticVHSCollision(BaseCollision):
         loss *= self.kernels["loss"] * input_f
         loss = loss.sum(axis=0)
         # Output
-        return (gain / (self._sphr_fac) - loss).real
+        if with_loss:
+            return (gain / (self._sphr_fac) - loss).real
+        else:
+            return (gain / self._sphr_fac).real
 
     def laplacian(self, input_f):
         return self.iffts[0](self.kernels["lapl"] * self.ffts[0](input_f)).real
-

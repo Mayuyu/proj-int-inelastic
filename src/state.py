@@ -8,10 +8,22 @@ class State(object):
     computational grid."""
 
     def __getattr__(self, key):
-        if key in ('num_dim', 'num_dim_x', 'c_centers', 'c_nodes', 'num_cells', 'lower', 'upper', 'delta', 'centers'):
+        if key in (
+            "num_dim",
+            "num_dim_x",
+            "c_centers",
+            "c_nodes",
+            "num_cells",
+            "lower",
+            "upper",
+            "delta",
+            "centers",
+        ):
             return self._get_grid_attribute(key)
         else:
-            raise AttributeError("'State' object has no attribute '"+key+"'")
+            raise AttributeError(
+                "'State' object has no attribute '" + key + "'"
+            )
 
     def _get_grid_attribute(self, name):
         return getattr(self.grid, name)
@@ -23,18 +35,21 @@ class State(object):
 
     @property
     def u(self):
-        return [self.sum_f(self.f*self.c_centers[i]) / self.rho for i in (-2, -1)]
+        return [
+            self.sum_f(self.f * self.c_centers[i]) / self.rho for i in (-2, -1)
+        ]
         # return [self.sum_f(self.f*self.c_centers[i]) for i in (-2, -1)]
 
     @property
     def T(self):
-        E = 0.5*self.sum_f(self.f*(self.c_centers[-2]**2 + self.c_centers[-1]**2))
-        u_square = 0.
+        E = 0.5 * self.sum_f(
+            self.f * (self.c_centers[-2] ** 2 + self.c_centers[-1] ** 2)
+        )
+        u_square = 0.0
         for u in self.u:
-            u_square += u**2
+            u_square += u ** 2
 
-        return E / self.rho - 0.5*u_square
-
+        return E / self.rho - 0.5 * u_square
 
     def __init__(self, geom):
         if isinstance(geom, Grid):
@@ -45,7 +60,7 @@ class State(object):
             raise Exception("Must be initialzed with a Grid object.")
 
         self.problem_data = {}
-        self.t = 0.
+        self.t = 0.0
         self.f = self.new_array()
 
     def new_array(self):
@@ -58,22 +73,23 @@ class State(object):
 
     def __deepcopy__(self, memo={}):
         import copy
+
         result = self.__class__(copy.deepcopy(self.grid))
         result.__init__(copy.deepcopy(self.grid))
 
-        for attr in ('t', 'problem_data'):
+        for attr in ("t", "problem_data"):
             setattr(result, attr, copy.deepcopy(getattr(self, attr)))
 
         if self.f is not None:
             result.f = copy.deepcopy(self.f)
-        
+
         return result
 
     def get_f_global(self):
         return self.f.copy()
 
     def sum_f(self, f):
-        return np.sum(f, axis=(-1, -2))*self.delta[-1]*self.delta[-2]
+        return np.sum(f, axis=(-1, -2)) * self.delta[-1] * self.delta[-2]
 
     def set_f_from_fbc(self, num_ghost, fbc):
         """

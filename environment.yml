@@ -1,5 +1,6 @@
-name: inelastic-boltz
+name: general
 dependencies:
+  - python=3.7
   - numpy
   - scipy
   - matplotlib
@@ -7,7 +8,11 @@ dependencies:
   # For ipython and jupyter lab
   - ipykernel
   - ipywidgets
+  - flake8
+  - black
   - pip
   - pip:
+    - cupy-cuda101
+    - tensorflow
     - pyfftw
     - clawpack
