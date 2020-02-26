@@ -1,6 +1,5 @@
 import math
 
-import cupy as cp
 import numpy as np
 
 from .spherical_design import get_sphrquadrule
@@ -116,6 +115,11 @@ class SpectralMesh(object):
     @property
     def L(self):
         return self._L
+
+    @property
+    def R(self):
+        return self._R
+
     @property
     def delta(self):
         return 2 * self.L / self.nv
@@ -126,4 +130,3 @@ class SpectralMesh(object):
 
     def rquad(self):
         return self._r, self._wr
-

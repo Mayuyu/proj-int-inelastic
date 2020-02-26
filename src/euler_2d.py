@@ -11,25 +11,22 @@ Simple example solving the Euler equations of compressible fluid dynamics:
     (\rho v)_t + (\rho uv)_x + (\rho v^2 + p)_y & = 0 \\
     E_t + (u (E + p) )_x + (v (E + p))_y & = 0.
 
-Here :math:`\rho` is the density, (u,v) is the velocity, and E is the total energy.
-The initial condition is one of the 2D Riemann problems from the paper of
-Liska and Wendroff.
+Here :math:`\rho` is the density, (u,v) is the velocity,
+and E is the total energy. The initial condition is one of the 2D Riemann
+problems from the paper of Liska and Wendroff.
 
 """
 from __future__ import absolute_import
 
 import numpy as np
-
-from clawpack import pyclaw
-from clawpack import riemann
+from clawpack import pyclaw, riemann
 from clawpack.riemann.euler_4wave_2D_constants import (
     density,
-    x_momentum,
-    y_momentum,
     energy,
     num_eqn,
+    x_momentum,
+    y_momentum,
 )
-from clawpack.visclaw import colormaps
 
 
 def q_src(solver, state, dt):
@@ -38,7 +35,6 @@ def q_src(solver, state, dt):
 
 
 class Euler2D(object):
-    
     def __init__(self, domain_config):
         solver = pyclaw.ClawSolver2D(riemann.euler_4wave_2D)
         solver.all_bcs = pyclaw.BC.periodic
@@ -66,7 +62,9 @@ class Euler2D(object):
         self._solution = solution
         self._claw = claw
 
-    def set_initial(self, rho_mean, rho_var, ux=0.0, uy=0.0, T=1.0, dist="uniform"):
+    def set_initial(
+        self, rho_mean, rho_var, ux=0.0, uy=0.0, T=1.0, dist="uniform"
+    ):
         self._solution.t = 0.0
         # Set initial data
         xx, _ = self._domain.grid.p_centers
@@ -94,7 +92,8 @@ class Euler2D(object):
 
         _, axes = plt.subplots(figsize=(8, 6))
         cs = axes.contourf(
-            self._claw.solution.q[energy, ...] / self._claw.solution.q[density, ...]
+            self._claw.solution.q[energy, ...]
+            / self._claw.solution.q[density, ...]
             - 0.5
             * (
                 self._claw.solution.q[x_momentum, ...] ** 2

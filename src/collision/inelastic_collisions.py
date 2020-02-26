@@ -31,11 +31,12 @@ class FSInelasticVHSCollision(BaseCollision):
         # Load collision model (e and gamma)
         collision_model = self.config["collision-model"]
         self._e = float(collision_model.get("e", 1.0))
+        self._e0 = float(collision_model.get("e0", 1.0))
         self._gamma = float(collision_model.get("gamma", 0.0))
 
         # Compute prefactor and exponential factor
-        L = self.sm.L
-        self._exp_fac = 0.25 * math.pi * (1 + self._e) / L
+        # L = self.sm.L
+        # self._exp_fac = 0.25 * math.pi * (1 + self._e) / L
 
         # Special functions
         if self.ndim == 2:
@@ -72,10 +73,16 @@ class FSInelasticVHSCollision(BaseCollision):
         sigma, wsigma = self.sm.circ_or_sphr_quad()
         quad_slice = (...,) + (None,) * self.ndim
 
+        # Compute exponential factor
+        self._e = 0.5 * (self._e0 - self._e) * np.tanh(
+            r - 0.5 * self.sm.R
+        ) + 0.5 * (self._e0 + self._e)
+        self._exp_fac = 0.25 * math.pi * (1 + self._e) / self.sm.L
+
         # Gain term
         # Dot with index
         # index_mesh has shape (nr, nsigma, nv, nv) (2D)
-        # or (nv, nsigma, nv, nv, nv)
+        # or (nr, nsigma, nv, nv, nv)
         idx_mesh = 0
         for i in range(self.ndim):
             idx_mesh = (
@@ -85,6 +92,7 @@ class FSInelasticVHSCollision(BaseCollision):
         # Compute gain kernel
         r_gain = r[quad_slice + (None,)]
         wr_gain = wr[quad_slice + (None,)]
+        self._exp_fac = self._exp_fac[quad_slice + (None,)]
         idx_mesh = idx_mesh * r_gain
         gain_kern = (
             self._pre_fac(r_gain)
@@ -167,15 +175,13 @@ class FSInelasticVHSCollision(BaseCollision):
         # Compute axis
         axis = tuple(-(i + 1) for i in range(self.ndim))
 
-        # cufft
+        # Cufft
         def cufft(x):
             return cp.fft.fftn(x, axes=axis)
 
         def cuifft(x):
             return cp.fft.ifftn(x, axes=axis)
 
-        # cufft = lambda x: cp.fft.fftn(x, axes=axis)
-        # cuifft = lambda x: cp.fft.ifftn(x, axes=axis)
         self.ffts_gpu = [cufft] * 3
         self.iffts_gpu = [cuifft] * 3
 
