@@ -1,0 +1,32 @@
+{
+  "name": "inelastic-boltz",
+  "context": "..",
+  "image": "zhengma/kipack:dev",
+  // "dockerFile": "Dockerfile",
+  // Comment out to connect as root instead.
+  "remoteUser": "vscode",
+  // Bind mount
+  "workspaceMount": "source=inelastic-boltz,target=/home/vscode/workspace,type=volume",
+  "workspaceFolder": "/home/vscode/workspace",
+
+  // Set *default* container specific settings.json values on container create.
+  "settings": {
+    "python.languageServer": "Pylance",
+    "python.formatting.provider": "black",
+    "python.formatting.blackArgs": ["--line-length", "79"],
+    "python.linting.pylintEnabled": false,
+    "python.linting.flake8Enabled": true,
+    "python.linting.flake8Args": ["--extend-ignore=E203"],
+    "python.terminal.activateEnvironment": false
+  },
+
+  // Add the IDs of extensions you want installed when the container is created.
+  "extensions": ["ms-python.python", "ms-python.vscode-pylance"],
+
+  // Use 'forwardPorts' to make a list of ports inside the container available locally.
+  "forwardPorts": [8888]
+
+  // Use 'postCreateCommand' to run commands after the container is created.
+  //   "postCreateCommand": "pip3 install -r requirements.txt",
+  // "postStartCommand": "jupyter lab --no-browser --ip 0.0.0.0"
+}
