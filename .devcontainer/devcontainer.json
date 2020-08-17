@@ -8,7 +8,7 @@
   // Bind mount
   // "workspaceMount": "source=inelastic-boltz,target=/home/vscode/workspace,type=volume",
   // "workspaceFolder": "/home/vscode/workspace",
-  "mounrt": ["type=volume,source=inelastic-boltz,dst=/workspace"]
+  "mount": ["type=volume,source=inelastic-boltz,dst=/workspace"],
 
   // Set *default* container specific settings.json values on container create.
   "settings": {
