@@ -1,13 +1,14 @@
 {
   "name": "inelastic-boltz",
   "context": "..",
-  "image": "zhengma/kipack:dev",
+  "image": "zhengma/kipack:devel",
   // "dockerFile": "Dockerfile",
   // Comment out to connect as root instead.
   "remoteUser": "vscode",
   // Bind mount
-  "workspaceMount": "source=inelastic-boltz,target=/home/vscode/workspace,type=volume",
-  "workspaceFolder": "/home/vscode/workspace",
+  // "workspaceMount": "source=inelastic-boltz,target=/home/vscode/workspace,type=volume",
+  // "workspaceFolder": "/home/vscode/workspace",
+  "mounrt": ["type=volume,source=inelastic-boltz,dst=/workspace"]
 
   // Set *default* container specific settings.json values on container create.
   "settings": {
